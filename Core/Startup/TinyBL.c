@@ -1,6 +1,7 @@
 
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_uart.h"
+#include "BLQueue.h"
 
 __weak void HAL_UART_MspInit(UART_HandleTypeDef *huart)
 {
@@ -107,7 +108,7 @@ void TinyBLInit(void) {
 
 
 	UartHandle.Instance        = USART3;
-	UartHandle.Init.BaudRate   = 115200;
+	UartHandle.Init.BaudRate   = 57600;
 	UartHandle.Init.WordLength = UART_WORDLENGTH_8B;
 	UartHandle.Init.StopBits   = UART_STOPBITS_1;
 	UartHandle.Init.Parity     = UART_PARITY_NONE;
@@ -123,6 +124,32 @@ void TinyBLInit(void) {
 
 }
 
+uint8_t uartInBuf[0xFF];
+void TinyBLRAMLoader(void) {
+	//init fancy circular queue
+	BLQueue q;
+	BLQueueInit(&q);
+
+	asm("nop");
+	//wait for an init message
+		//init format: "INIT" + message count (uint32, big endian)
+
+
+	//temp test echo back messages
+
+	for(;;) {
+		uint16_t count;
+		HAL_UARTEx_ReceiveToIdle(&UartHandle, uartInBuf, 16, &count, 0);
+		if(count) {
+			HAL_UART_Transmit(&UartHandle, uartInBuf, count, HAL_MAX_DELAY);
+		}
+		//HAL_UART_Receive_DMA(&UartHandle, uartInBuf, 0xFF);
+		//HAL_UARTEx_ReceiveToIdle_DMA(&UartHandle, uartInBuf, 0xff);
+		//HAL_UARTEx_ReceiveToIdle_IT(&UartHandle, uartInBuf, 0xFF);
+		//HAL_UART_Receive_IT(&UartHandle, uartInBuf, 1);
+		//for(;;);
+	}
+}
 
 //Check digital pin and branches to TinyBL if set
 //runs on startup
@@ -140,5 +167,19 @@ void TinyBLStartup(void) {
 		HAL_UART_Transmit(&UartHandle, printout, 17, HAL_MAX_DELAY);
 	}
 
+	//proceed to loader
+	TinyBLRAMLoader();
+}
 
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
+	// check if the callback is called by the USART2 peripheral
+	if(huart->Instance == USART3){
+
+	}
+}
+
+void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
+{
+  asm("nop");
+  HAL_UART_Receive_IT(&UartHandle, uartInBuf, 1);
 }

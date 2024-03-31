@@ -1,2 +1,0 @@
-../Core/Src/stm32f4xx_hal_msp.c:59:6:HAL_UART_MspInit	1
-../Core/Src/stm32f4xx_hal_msp.c:90:6:HAL_MspInit	1

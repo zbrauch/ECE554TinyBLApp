@@ -113,7 +113,7 @@ int main(void)
 	/* USER CODE BEGIN 2 */
 	//UART init
 	UartHandle.Instance        = USART3;
-	UartHandle.Init.BaudRate   = 115200;
+	UartHandle.Init.BaudRate   = 57600;
 	UartHandle.Init.WordLength = UART_WORDLENGTH_8B;
 	UartHandle.Init.StopBits   = UART_STOPBITS_1;
 	UartHandle.Init.Parity     = UART_PARITY_NONE;

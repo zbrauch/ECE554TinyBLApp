@@ -1,3 +1,0 @@
-../Core/Startup/TinyBL.c:5:13:HAL_UART_MspInit	1
-../Core/Startup/TinyBL.c:34:6:TinyBLInit	5
-../Core/Startup/TinyBL.c:129:6:TinyBLStartup	2
