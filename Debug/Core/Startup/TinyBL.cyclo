@@ -1,0 +1,10 @@
+../Core/Startup/BLQueue.h:13:6:BLQueueInit	1
+../Core/Startup/BLQueue.h:19:6:BLQueueFixBounds	4
+../Core/Startup/BLQueue.h:28:6:BLQueueAdd	2
+../Core/Startup/BLQueue.h:39:6:BLQueueAddArray	2
+../Core/Startup/BLQueue.h:44:9:BLQueueGetIdx	2
+../Core/Startup/BLQueue.h:56:9:BLQueueExtractMessage	6
+../Core/Startup/TinyBL.c:6:13:HAL_UART_MspInit	1
+../Core/Startup/TinyBL.c:35:6:TinyBLInit	5
+../Core/Startup/TinyBL.c:128:6:TinyBLRAMLoader	5
+../Core/Startup/TinyBL.c:184:6:TinyBLStartup	2

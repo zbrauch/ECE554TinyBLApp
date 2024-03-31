@@ -16,7 +16,7 @@ void BLQueueInit(BLQueue *q) {
 	q->len = 0;
 }
 
-inline void BLQueueFixBounds(BLQueue *q) {
+void BLQueueFixBounds(BLQueue *q) {
 	if(q->start >= BL_QUEUE_LEN)
 		q->start -= BL_QUEUE_LEN;
 	if(q->next >= BL_QUEUE_LEN)
@@ -47,6 +47,27 @@ uint8_t BLQueueGetIdx(BLQueue *q, uint8_t idx) {
 		retIdx -= BL_QUEUE_LEN;
 
 	return q->buf[retIdx];
+}
+
+//pulls a 10 byte command out of the buffer if one exists
+	//Commands start with sopChar and end with 'E'
+	//Also moves the start of the buffer to the end of the extracted command
+	//returns 1 if command extracted, 0 if none found
+uint8_t BLQueueExtractMessage(BLQueue *q, uint8_t *outBuf, uint8_t sopChar) {
+	for(uint8_t i = 0; i < q->len - 9; i++) {
+		if(BLQueueGetIdx(q, i) == sopChar) {
+			if(i+9 < q->len && BLQueueGetIdx(q, i+9) == 'E') {
+				for(uint8_t j = 0; j < 10; j++)
+					outBuf[j] = BLQueueGetIdx(q, i+j);
+
+				q->start += i+10;
+				q->len -= (i+10);
+				BLQueueFixBounds(q);
+				return 1;
+			}
+		}
+	}
+	return 0;
 }
 
 #endif /* STARTUP_BLQUEUE_H_ */

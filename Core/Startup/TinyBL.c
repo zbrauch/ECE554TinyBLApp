@@ -124,24 +124,53 @@ void TinyBLInit(void) {
 
 }
 
-uint8_t uartInBuf[0xFF];
+
 void TinyBLRAMLoader(void) {
+	uint8_t uartInBuf[17];
+	uint32_t startAddr;
+	uint32_t msgCount;
+	uint32 dataRxCount = 0; //number of data messages received by loader
+	uint8_t cmdBuf[10];
+
 	//init fancy circular queue
 	BLQueue q;
 	BLQueueInit(&q);
 
 	asm("nop");
 	//wait for an init message
-		//init format: "INIT" + message count (uint32, big endian)
-
-
-	//temp test echo back messages
-
+	//init format: "I" + message count (uint32, big endian) + start address (uint32, big endian) + 'E'
 	for(;;) {
 		uint16_t count;
-		HAL_UARTEx_ReceiveToIdle(&UartHandle, uartInBuf, 16, &count, 0);
+		HAL_UARTEx_ReceiveToIdle(&UartHandle, uartInBuf, 17, &count, 0);
 		if(count) {
-			HAL_UART_Transmit(&UartHandle, uartInBuf, count, HAL_MAX_DELAY);
+			//Add to input ring buffer
+			BLQueueAddArray(&q, uartInBuf, count);
+			//process for packets
+			uint8_t isMessage = BLQueueExtractMessage(&q, cmdBuf, 'I');
+			if(isMessage) {
+				msgCount = *((uint32_t*)(cmdBuf+1));
+				startAddr = *((uint32_t*)(cmdBuf+5));
+
+				HAL_UART_Transmit(&UartHandle, "Init Received\r\n", 15, HAL_MAX_DELAY);
+				break;
+			}
+		}
+	}
+
+	//temp test echo back messages
+	for(;;) {
+		uint16_t count;
+		HAL_UARTEx_ReceiveToIdle(&UartHandle, uartInBuf, 17, &count, 0);
+		if(count) {
+			//HAL_UART_Transmit(&UartHandle, uartInBuf, count, HAL_MAX_DELAY);
+			//Add to input ring buffer
+			BLQueueAddArray(&q, uartInBuf, count);
+
+			//process for packets
+			uint8_t isMessage = BLQueueExtractMessage(&q, cmdBuf, 'S');
+			if(isMessage) {
+				HAL_UART_Transmit(&UartHandle, cmdBuf, 10, HAL_MAX_DELAY);
+			}
 		}
 		//HAL_UART_Receive_DMA(&UartHandle, uartInBuf, 0xFF);
 		//HAL_UARTEx_ReceiveToIdle_DMA(&UartHandle, uartInBuf, 0xff);
@@ -171,7 +200,7 @@ void TinyBLStartup(void) {
 	TinyBLRAMLoader();
 }
 
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
+/*void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
 	// check if the callback is called by the USART2 peripheral
 	if(huart->Instance == USART3){
 
@@ -180,6 +209,6 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
 
 void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 {
-  asm("nop");
-  HAL_UART_Receive_IT(&UartHandle, uartInBuf, 1);
-}
+	asm("nop");
+	HAL_UART_Receive_IT(&UartHandle, uartInBuf, 1);
+}*/
