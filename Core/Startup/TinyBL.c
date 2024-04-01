@@ -129,7 +129,7 @@ void TinyBLRAMLoader(void) {
 	uint8_t uartInBuf[17];
 	uint32_t startAddr;
 	uint32_t msgCount;
-	uint32 dataRxCount = 0; //number of data messages received by loader
+	uint32_t dataRxCount = 0; //number of data messages received by loader
 	uint8_t cmdBuf[10];
 
 	//init fancy circular queue
@@ -138,7 +138,7 @@ void TinyBLRAMLoader(void) {
 
 	asm("nop");
 	//wait for an init message
-	//init format: "I" + message count (uint32, big endian) + start address (uint32, big endian) + 'E'
+	//init format: "I" + message count (uint32, LE) + start address (uint32, LE) + 'E'
 	for(;;) {
 		uint16_t count;
 		HAL_UARTEx_ReceiveToIdle(&UartHandle, uartInBuf, 17, &count, 0);
@@ -156,9 +156,64 @@ void TinyBLRAMLoader(void) {
 			}
 		}
 	}
+	BLQueueInit(&q);
+
+	asm("nop");
+
+	//receive all ramcode data messages
+	uint32_t curAddr = startAddr;
+	uint32_t recDataMsgCount = 0;
+	for(uint32_t i = 0; i < msgCount; i++) {
+		for(;;) {
+			uint16_t count;
+			HAL_UARTEx_ReceiveToIdle(&UartHandle, uartInBuf, 17, &count, 0);
+			if(count) {
+				//Add to input ring buffer
+				BLQueueAddArray(&q, uartInBuf, count);
+				//process for packets
+				uint8_t isMessage = BLQueueExtractMessage(&q, cmdBuf, 'D');
+				if(isMessage) {
+					recDataMsgCount++;
+					uint8_t *ramAddr = (uint8_t*)curAddr;
+					for(uint8_t i = 0; i < 8; i++)
+						ramAddr[i] = cmdBuf[i+1];
+					curAddr += 8;
+					break;
+				}
+			}
+		}
+	}
+
+	__asm("nop");
+
+	//wait for second init message
+	//init format: "I" + entry address (uint32, little endian) + 4 pad bytes + 'E'
+	uint32_t entryAddr;
+	for(;;) {
+		uint16_t count;
+		HAL_UARTEx_ReceiveToIdle(&UartHandle, uartInBuf, 17, &count, 0);
+		if(count) {
+			//Add to input ring buffer
+			BLQueueAddArray(&q, uartInBuf, count);
+			//process for packets
+			uint8_t isMessage = BLQueueExtractMessage(&q, cmdBuf, 'I');
+			if(isMessage) {
+				entryAddr = *((uint32_t*)(cmdBuf+1));
+
+				HAL_UART_Transmit(&UartHandle, "Branching to RAM\r\n", 16, HAL_MAX_DELAY);
+				break;
+			}
+		}
+	}
+	BLQueueInit(&q);
+
+	__asm("nop");
+
+	//The most beautiful line of C ever written
+	((void (*)(void)) entryAddr)();
 
 	//temp test echo back messages
-	for(;;) {
+	/*for(;;) {
 		uint16_t count;
 		HAL_UARTEx_ReceiveToIdle(&UartHandle, uartInBuf, 17, &count, 0);
 		if(count) {
@@ -177,7 +232,7 @@ void TinyBLRAMLoader(void) {
 		//HAL_UARTEx_ReceiveToIdle_IT(&UartHandle, uartInBuf, 0xFF);
 		//HAL_UART_Receive_IT(&UartHandle, uartInBuf, 1);
 		//for(;;);
-	}
+	}*/
 }
 
 //Check digital pin and branches to TinyBL if set

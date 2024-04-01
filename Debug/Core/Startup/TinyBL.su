@@ -6,5 +6,5 @@
 ../Core/Startup/BLQueue.h:56:9:BLQueueExtractMessage	40	static
 ../Core/Startup/TinyBL.c:6:13:HAL_UART_MspInit	48	static
 ../Core/Startup/TinyBL.c:35:6:TinyBLInit	88	static
-../Core/Startup/TinyBL.c:128:6:TinyBLRAMLoader	168	static,ignoring_inline_asm
-../Core/Startup/TinyBL.c:184:6:TinyBLStartup	72	static
+../Core/Startup/TinyBL.c:128:6:TinyBLRAMLoader	208	static,ignoring_inline_asm
+../Core/Startup/TinyBL.c:240:6:TinyBLStartup	72	static
