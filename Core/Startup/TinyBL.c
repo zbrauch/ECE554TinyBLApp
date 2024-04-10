@@ -241,15 +241,25 @@ void TinyBLStartup(void) {
 
 	//TODO: return when digital pin is not set
 	//needs digital pin init and read code. We'll configure the pin to pull down for convenience
+	//init gpio pin
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+	__HAL_RCC_GPIOC_CLK_ENABLE();
+	GPIO_InitStruct.Pin = GPIO_PIN_13;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+	if(!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13))
+		return;
 
 	TinyBLInit();
 
 	//temp UART test
-	uint8_t printout[50] = "Hello from BL!\r\n";
+	/*uint8_t printout[50] = "Hello from BL!\r\n";
 	for(uint8_t i = 0; i < 1; i++) {
 		//UART_
 		HAL_UART_Transmit(&UartHandle, printout, 17, HAL_MAX_DELAY);
-	}
+	}*/
 
 	//proceed to loader
 	TinyBLRAMLoader();

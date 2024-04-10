@@ -32,7 +32,24 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define LEDn                                    3
 
+#define LED1_PIN                                GPIO_PIN_0
+#define LED1_GPIO_PORT                          GPIOB
+#define LED1_GPIO_CLK_ENABLE()                  __HAL_RCC_GPIOB_CLK_ENABLE()
+#define LED1_GPIO_CLK_DISABLE()                 __HAL_RCC_GPIOB_CLK_DISABLE()
+
+#define LED2_PIN                                GPIO_PIN_7
+#define LED2_GPIO_PORT                          GPIOB
+#define LED2_GPIO_CLK_ENABLE()                  __HAL_RCC_GPIOB_CLK_ENABLE()
+#define LED2_GPIO_CLK_DISABLE()                 __HAL_RCC_GPIOB_CLK_DISABLE()
+
+#define LED3_PIN                                GPIO_PIN_14
+#define LED3_GPIO_PORT                          GPIOB
+#define LED3_GPIO_CLK_ENABLE()                  __HAL_RCC_GPIOB_CLK_ENABLE()
+#define LED3_GPIO_CLK_DISABLE()                 __HAL_RCC_GPIOB_CLK_DISABLE()
+#define LEDx_GPIO_CLK_ENABLE(__INDEX__)   do { if((__INDEX__) == 0) {__HAL_RCC_GPIOB_CLK_ENABLE();} else\
+		{__HAL_RCC_GPIOB_CLK_ENABLE();   }} while(0)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -44,6 +61,9 @@
 
 /* USER CODE BEGIN PV */
 extern UART_HandleTypeDef UartHandle; //UART handler declaration
+GPIO_TypeDef* GPIO_PORT[LEDn] = {LED1_GPIO_PORT, LED2_GPIO_PORT, LED3_GPIO_PORT};
+
+const uint16_t GPIO_PIN[LEDn] = {LED1_PIN, LED2_PIN, LED3_PIN};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -54,6 +74,40 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+typedef enum
+{
+	LED1 = 0,
+	LED_GREEN = LED1,
+	LED2 = 1,
+	LED_BLUE = LED2,
+	LED3 = 2,
+	LED_RED = LED3
+}Led_TypeDef;
+void BSP_LED_Init(Led_TypeDef Led)
+{
+	GPIO_InitTypeDef  GPIO_InitStruct;
+
+	/* Enable the GPIO_LED Clock */
+	LEDx_GPIO_CLK_ENABLE(Led);
+
+	/* Configure the GPIO_LED pin */
+	GPIO_InitStruct.Pin = GPIO_PIN[Led];
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FAST;
+
+	HAL_GPIO_Init(GPIO_PORT[Led], &GPIO_InitStruct);
+	HAL_GPIO_WritePin(GPIO_PORT[Led], GPIO_PIN[Led], GPIO_PIN_RESET);
+}
+void BSP_LED_On(Led_TypeDef Led)
+{
+	HAL_GPIO_WritePin(GPIO_PORT[Led], GPIO_PIN[Led], GPIO_PIN_SET);
+}
+void BSP_LED_Off(Led_TypeDef Led)
+{
+	HAL_GPIO_WritePin(GPIO_PORT[Led], GPIO_PIN[Led], GPIO_PIN_RESET);
+}
+
 /*void HAL_UART_MspInit(UART_HandleTypeDef *huart)
 {
 	GPIO_InitTypeDef  GPIO_InitStruct;
@@ -106,7 +160,9 @@ int main(void)
 	SystemClock_Config();
 
 	/* USER CODE BEGIN SysInit */
-
+	BSP_LED_Init(LED1);
+	BSP_LED_Init(LED2);
+	BSP_LED_Init(LED3);
 	/* USER CODE END SysInit */
 
 	/* Initialize all configured peripherals */
@@ -128,19 +184,29 @@ int main(void)
 
 	//HAL_UART_MspInit(&UartHandle);
 
-	uint8_t printout[50] = "Hello from FLASH!\r\n";
-	HAL_UART_Transmit(&UartHandle, printout, 20, HAL_MAX_DELAY);
+	//uint8_t printout[50] = "Hello from FLASH!\r\n";
+	//HAL_UART_Transmit(&UartHandle, printout, 20, HAL_MAX_DELAY);
 
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
+	BSP_LED_On(LED3);
 	while (1)
 	{
 		/* USER CODE END WHILE */
-		asm("nop");
-		asm("nop");
-		asm("nop");
+		HAL_Delay(250);
+		BSP_LED_On(LED1);
+		HAL_Delay(250);
+		BSP_LED_On(LED2);
+		HAL_Delay(250);
+		BSP_LED_On(LED3);
+		HAL_Delay(250);
+		BSP_LED_Off(LED1);
+		HAL_Delay(250);
+		BSP_LED_Off(LED2);
+		HAL_Delay(250);
+		BSP_LED_Off(LED3);
 		/* USER CODE BEGIN 3 */
 	}
 	/* USER CODE END 3 */
