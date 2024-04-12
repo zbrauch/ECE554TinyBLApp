@@ -3,6 +3,9 @@
 #include "stm32f4xx_hal_uart.h"
 #include "BLQueue.h"
 
+#pragma GCC push_options
+#pragma GCC optimize ("-Ofast")
+
 __weak void HAL_UART_MspInit(UART_HandleTypeDef *huart)
 {
 	GPIO_InitTypeDef  GPIO_InitStruct;
@@ -130,7 +133,7 @@ void TinyBLRAMLoader(void) {
 	uint32_t startAddr;
 	uint32_t msgCount;
 	uint32_t dataRxCount = 0; //number of data messages received by loader
-	uint8_t cmdBuf[10];
+	uint8_t cmdBuf[20];
 
 	//init fancy circular queue
 	BLQueue q;
@@ -140,13 +143,14 @@ void TinyBLRAMLoader(void) {
 	//wait for an init message
 	//init format: "I" + message count (uint32, LE) + start address (uint32, LE) + 'E'
 	for(;;) {
-		uint16_t count;
-		HAL_UARTEx_ReceiveToIdle(&UartHandle, uartInBuf, 17, &count, 0);
-		if(count) {
+		//uint16_t count;
+		//HAL_UARTEx_ReceiveToIdle(&UartHandle, uartInBuf, 17, &count, 0);
+		if((UartHandle.Instance->SR & UART_FLAG_RXNE) == UART_FLAG_RXNE) {
 			//Add to input ring buffer
-			BLQueueAddArray(&q, uartInBuf, count);
+			BLQueueAdd(&q, (uint8_t)UartHandle.Instance->DR);
+			//BLQueueAddArray(&q, uartInBuf, count);
 			//process for packets
-			uint8_t isMessage = BLQueueExtractMessage(&q, cmdBuf, 'I');
+			uint8_t isMessage = BLQueueExtractInit(&q, cmdBuf, 'I');
 			if(isMessage) {
 				msgCount = *((uint32_t*)(cmdBuf+1));
 				startAddr = *((uint32_t*)(cmdBuf+5));
@@ -165,19 +169,19 @@ void TinyBLRAMLoader(void) {
 	uint32_t recDataMsgCount = 0;
 	for(uint32_t i = 0; i < msgCount; i++) {
 		for(;;) {
-			uint16_t count;
-			HAL_UARTEx_ReceiveToIdle(&UartHandle, uartInBuf, 17, &count, 0);
-			if(count) {
+			//uint16_t count;
+			if((UartHandle.Instance->SR & UART_FLAG_RXNE) == UART_FLAG_RXNE) {
 				//Add to input ring buffer
-				BLQueueAddArray(&q, uartInBuf, count);
+				BLQueueAdd(&q, (uint8_t)UartHandle.Instance->DR);
+				//BLQueueAddArray(&q, uartInBuf, count);
 				//process for packets
-				uint8_t isMessage = BLQueueExtractMessage(&q, cmdBuf, 'D');
+				uint8_t isMessage = BLQueueExtractData(&q, cmdBuf, 'D');
 				if(isMessage) {
 					recDataMsgCount++;
 					uint8_t *ramAddr = (uint8_t*)curAddr;
-					for(uint8_t i = 0; i < 8; i++)
+					for(uint8_t i = 0; i < 18; i++)
 						ramAddr[i] = cmdBuf[i+1];
-					curAddr += 8;
+					curAddr += 18;
 					break;
 				}
 			}
@@ -190,13 +194,16 @@ void TinyBLRAMLoader(void) {
 	//init format: "I" + entry address (uint32, little endian) + 4 pad bytes + 'E'
 	uint32_t entryAddr;
 	for(;;) {
-		uint16_t count;
-		HAL_UARTEx_ReceiveToIdle(&UartHandle, uartInBuf, 17, &count, 0);
-		if(count) {
+		//uint16_t count;
+		//HAL_UARTEx_ReceiveToIdle(&UartHandle, uartInBuf, 17, &count, 0);
+		if((UartHandle.Instance->SR & UART_FLAG_RXNE) == UART_FLAG_RXNE) {
 			//Add to input ring buffer
-			BLQueueAddArray(&q, uartInBuf, count);
+			BLQueueAdd(&q, (uint8_t)UartHandle.Instance->DR);
+
+			//Add to input ring buffer
+			//BLQueueAddArray(&q, uartInBuf, count);
 			//process for packets
-			uint8_t isMessage = BLQueueExtractMessage(&q, cmdBuf, 'I');
+			uint8_t isMessage = BLQueueExtractInit(&q, cmdBuf, 'I');
 			if(isMessage) {
 				entryAddr = *((uint32_t*)(cmdBuf+1));
 
@@ -277,3 +284,4 @@ void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
 	asm("nop");
 	HAL_UART_Receive_IT(&UartHandle, uartInBuf, 1);
 }*/
+#pragma GCC pop_options

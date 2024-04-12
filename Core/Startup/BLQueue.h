@@ -3,6 +3,9 @@
 
 #define BL_QUEUE_LEN 100
 
+#pragma GCC push_options
+#pragma GCC optimize ("-Ofast")
+
 typedef struct {
 	uint8_t start; //array index of first element in queue
 	uint8_t next; //array index of the next element to write
@@ -53,7 +56,7 @@ uint8_t BLQueueGetIdx(BLQueue *q, uint8_t idx) {
 	//Commands start with sopChar and end with 'E'
 	//Also moves the start of the buffer to the end of the extracted command
 	//returns 1 if command extracted, 0 if none found
-uint8_t BLQueueExtractMessage(BLQueue *q, uint8_t *outBuf, uint8_t sopChar) {
+uint8_t BLQueueExtractInit(BLQueue *q, uint8_t *outBuf, uint8_t sopChar) {
 	for(uint8_t i = 0; i < q->len - 9; i++) {
 		if(BLQueueGetIdx(q, i) == sopChar) {
 			if(i+9 < q->len && BLQueueGetIdx(q, i+9) == 'E') {
@@ -69,5 +72,27 @@ uint8_t BLQueueExtractMessage(BLQueue *q, uint8_t *outBuf, uint8_t sopChar) {
 	}
 	return 0;
 }
+
+//pulls a 20 byte command out of the buffer if one exists
+	//Commands start with sopChar and end with 'E'
+	//Also moves the start of the buffer to the end of the extracted command
+	//returns 1 if command extracted, 0 if none found
+uint8_t BLQueueExtractData(BLQueue *q, uint8_t *outBuf, uint8_t sopChar) {
+	for(uint8_t i = 0; i < q->len - 19; i++) {
+		if(BLQueueGetIdx(q, i) == sopChar) {
+			if(i+19 < q->len && BLQueueGetIdx(q, i+19) == 'E') {
+				for(uint8_t j = 0; j < 20; j++)
+					outBuf[j] = BLQueueGetIdx(q, i+j);
+
+				q->start += i+20;
+				q->len -= (i+20);
+				BLQueueFixBounds(q);
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+#pragma GCC pop_options
 
 #endif /* STARTUP_BLQUEUE_H_ */

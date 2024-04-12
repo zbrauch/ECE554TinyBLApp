@@ -195,7 +195,7 @@ int main(void)
 	while (1)
 	{
 		/* USER CODE END WHILE */
-		HAL_Delay(250);
+		/*HAL_Delay(250);
 		BSP_LED_On(LED1);
 		HAL_Delay(250);
 		BSP_LED_On(LED2);
@@ -206,7 +206,7 @@ int main(void)
 		HAL_Delay(250);
 		BSP_LED_Off(LED2);
 		HAL_Delay(250);
-		BSP_LED_Off(LED3);
+		BSP_LED_Off(LED3);*/
 		/* USER CODE BEGIN 3 */
 	}
 	/* USER CODE END 3 */
